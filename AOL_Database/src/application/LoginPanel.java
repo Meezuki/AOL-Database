@@ -113,13 +113,15 @@ public class LoginPanel {
                 Stage currentStage = (Stage) btnLogin.getScene().getWindow();
                 
                 // B. Siapkan Halaman Dashboard
-                DashboardPanel dashboard = new DashboardPanel();
+                //DashboardPanel dashboard = new DashboardPanel();
+                
+                MainLayout mainLayout = new MainLayout();
                 
                 // C. Ganti Scene (Layar) ke Dashboard
                 // Ukuran diset lebih besar (900x600) agar muat menu & keranjang
-                Scene dashboardScene = new Scene(dashboard.getView(), 900, 600);
+                Scene mainScene = new Scene(mainLayout.getView(), 900, 600);
                 
-                currentStage.setScene(dashboardScene);
+                currentStage.setScene(mainScene);
                 currentStage.setTitle("AOL Kitchen - Dashboard Kasir");
                 currentStage.centerOnScreen(); // Tengahkan layar
                 

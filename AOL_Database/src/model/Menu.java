@@ -17,7 +17,7 @@ public class Menu {
     public String getKodeMenu() { return kodeMenu; }
     public String getNamaMenu() { return namaMenu; }
     public int getHarga() { return harga; }
-    public String getIdKategori() { return idKategori; }
+    public String getKategori() { return idKategori; }
     
     @Override
     public String toString() {

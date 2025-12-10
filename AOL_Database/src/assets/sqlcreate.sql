@@ -36,7 +36,7 @@ CREATE TABLE Kasir (
 
 -- E. Tabel Transaksi (Header)
 CREATE TABLE Transaksi (
-    no_nota VARCHAR(15) PRIMARY KEY,
+    no_nota VARCHAR(20) PRIMARY KEY,
     id_pelanggan VARCHAR(15), -- Boleh NULL (Tamu biasa)
     id_kasir CHAR(5) NOT NULL,
     tanggal_transaksi DATETIME NOT NULL, -- Wajib DATETIME
