@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import model.CartItem;
+import model.CategoryModel;
 import model.Menu;
 import model.TransactionModel; 
 
@@ -224,4 +225,60 @@ public class DatabaseHelper {
             return false;
         }
     }
+    
+    public static boolean insertCategory(String id, String nama) {
+        String query = "INSERT INTO Kategori (id_kategori, nama_kategori) VALUES (?, ?)";
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, id);
+            ps.setString(2, nama);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // --- 9. UPDATE KATEGORI ---
+    public static boolean updateCategory(String id, String nama) {
+        String query = "UPDATE Kategori SET nama_kategori = ? WHERE id_kategori = ?";
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, nama);
+            ps.setString(2, id);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // --- 10. DELETE KATEGORI ---
+    public static boolean deleteCategory(String id) {
+        String query = "DELETE FROM Kategori WHERE id_kategori = ?";
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, id);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            // Gagal jika kategori masih dipakai oleh Menu
+            System.out.println("Gagal hapus: Kategori sedang digunakan oleh Menu.");
+            return false;
+        }
+    }
+    
+    // Helper tambahan untuk mengambil List object (opsional, untuk TableView Kategori)
+    public static List<CategoryModel> getCategoryList() {
+        List<CategoryModel> list = new ArrayList<>();
+        String query = "SELECT * FROM Kategori";
+        try (Connection conn = DatabaseConnection.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+            while(rs.next()) {
+                list.add(new CategoryModel(rs.getString("id_kategori"), rs.getString("nama_kategori")));
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return list;
+    }
 }
+

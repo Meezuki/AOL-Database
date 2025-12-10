@@ -31,6 +31,11 @@ public class MainLayout {
         tabHistory.setContent(history.getView());
         tabHistory.setClosable(false);
         
+        //-- TAB 3: category
+        ManageCategoryPanel manageCategory = new ManageCategoryPanel();
+        Tab tabCategory = new Tab("Kategori");
+        tabCategory.setContent(manageCategory.getView());
+        
         tabHistory.setOnSelectionChanged(e -> {
             if (tabHistory.isSelected()) history.refreshData();
         });
@@ -47,7 +52,7 @@ public class MainLayout {
         });
 
         // Masukkan Tab
-        tabPane.getTabs().addAll(tabKasir, tabHistory, tabMenu);
+        tabPane.getTabs().addAll(tabKasir, tabHistory, tabMenu, tabCategory);
 
         // --- LOGOUT BUTTON (BONUS) ---
         // Biasanya TabPane memenuhi layar, tapi kita bisa menambahkan tombol logout di header root jika mau.
