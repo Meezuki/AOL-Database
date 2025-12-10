@@ -7,7 +7,7 @@ CREATE TABLE Kategori (
 -- B. Tabel Menu
 CREATE TABLE Menu (
     kode_menu CHAR(5) PRIMARY KEY,
-    nama_menu VARCHAR(100) NOT NULL, -- 100 char agar muat nama panjang
+    nama_menu VARCHAR(100) NOT NULL, 
     harga_satuan INT NOT NULL,
     id_kategori CHAR(5) NOT NULL,
     -- Relasi ke Kategori
@@ -23,15 +23,15 @@ CREATE TABLE Pelanggan (
     no_telp_pelanggan VARCHAR(20) -- Boleh NULL
 );
 
--- D. Tabel Kasir (UPDATE: Ada kolom password)
+-- D. Tabel Kasir 
 CREATE TABLE Kasir (
     id_kasir CHAR(5) PRIMARY KEY,
     nama_kasir VARCHAR(50) NOT NULL,
-    password VARCHAR(255) NOT NULL DEFAULT '12345' -- Password untuk Login JavaFX
+    password VARCHAR(255) NOT NULL DEFAULT '12345' 
 );
 
 -- ==========================================
--- 3. MEMBUAT TABEL TRANSAKSI
+-- 3. TABEL TRANSAKSI
 -- ==========================================
 
 -- E. Tabel Transaksi (Header)

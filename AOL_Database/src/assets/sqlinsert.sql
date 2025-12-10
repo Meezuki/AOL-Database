@@ -15,7 +15,7 @@ INSERT INTO Menu VALUES
 ('MN003', 'Es Teh Manis', 5000, 'KAT02'),
 ('MN004', 'Kentang Goreng', 15000, 'KAT03');
 
--- Input Kasir (PENTING UNTUK TES LOGIN)
+-- Input Kasir 
 -- ID: KS001, Pass: 12345
 INSERT INTO Kasir (id_kasir, nama_kasir, password) VALUES 
 ('KS001', 'Budi Santoso', '12345'),
