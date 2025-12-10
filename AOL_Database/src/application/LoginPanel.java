@@ -1,9 +1,7 @@
 package application;
 
-import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -16,71 +14,57 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.stage.Stage;
 
-public class LoginPanel extends Application {
+public class LoginPanel {
 
-    @Override
-    public void start(Stage primaryStage) {
+    // Method ini mengembalikan layout utama (HBox) agar bisa dipanggil oleh Main
+    public HBox getLoginView() {
 
         // --- 1. PANEL KIRI (Branding Perusahaan) ---
-        VBox leftPane = new VBox(20); // Spacing 20px
+        VBox leftPane = new VBox(20); 
         leftPane.setAlignment(Pos.CENTER);
-        // Style CSS Inline untuk background biru tua
         leftPane.setStyle("-fx-background-color: #2D3447;"); 
         
-        // Gambar Logo (Placeholder)
-        // Ganti URL string di bawah ini dengan path gambar lokal Anda: "file:src/img/logo.png"
-//        String imageUrl = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"; 
-//        ImageView logoImage = new ImageView(new Image(imageUrl));
-        
-        
-     // Contoh jika file ada di root project atau resources folder
-        Image image = new Image(getClass().getResourceAsStream("/assets/logo.png"));
-        ImageView logoImage = new ImageView(image);
-        
-        
-        
-        logoImage.setFitHeight(150);
-        logoImage.setFitWidth(300);
-        
-        
-     
+        // Load Gambar
+        // Pastikan folder assets ada di folder resources (src/main/resources/assets/logo.png)
+        try {
+            Image image = new Image(getClass().getResourceAsStream("/assets/logo.png"));
+            ImageView logoImage = new ImageView(image);
+            logoImage.setFitHeight(100);
+            logoImage.setFitWidth(180);
+            leftPane.getChildren().add(logoImage);
+        } catch (Exception e) {
+            System.out.println("Gambar tidak ditemukan, pastikan path '/assets/logo.png' benar.");
+        }
 
-        // Teks Nama Perusahaan
-        Label companyLabel = new Label("PT. MAJU MUNDUR");
+        Label companyLabel = new Label("AOL Kitchen");
         companyLabel.setTextFill(Color.WHITE);
         companyLabel.setFont(Font.font("Verdana", FontWeight.BOLD, 20));
         
-        Label sloganLabel = new Label("Sistem Manajemen Staff");
+        Label sloganLabel = new Label("Sistem Kasir Restoran");
         sloganLabel.setTextFill(Color.LIGHTGRAY);
         sloganLabel.setFont(Font.font("Arial", 14));
 
-        leftPane.getChildren().addAll(logoImage, companyLabel, sloganLabel);
-
+        leftPane.getChildren().addAll(companyLabel, sloganLabel);
 
         // --- 2. PANEL KANAN (Form Login) ---
-        VBox rightPane = new VBox(15); // Spacing 15px
+        VBox rightPane = new VBox(15); 
         rightPane.setAlignment(Pos.CENTER);
         rightPane.setPadding(new Insets(40));
         rightPane.setStyle("-fx-background-color: #FFFFFF;");
 
-        // Judul Form
         Label loginTitle = new Label("Staff Login");
         loginTitle.setFont(Font.font("Arial", FontWeight.BOLD, 24));
         loginTitle.setTextFill(Color.web("#2D3447"));
 
-        // Input Staff ID
         TextField txtStaffId = new TextField();
         txtStaffId.setPromptText("Masukkan Staff ID");
         txtStaffId.setStyle("-fx-background-radius: 5px; -fx-padding: 10px;");
 
-        // Input Password
         PasswordField txtPassword = new PasswordField();
         txtPassword.setPromptText("Masukkan Password");
         txtPassword.setStyle("-fx-background-radius: 5px; -fx-padding: 10px;");
 
-        // Tombol Login
         Button btnLogin = new Button("LOGIN");
         btnLogin.setPrefWidth(200);
         btnLogin.setStyle(
@@ -92,48 +76,55 @@ public class LoginPanel extends Application {
             "-fx-cursor: hand;"
         );
 
-        // Label Pesan Error (Hidden by default)
         Label msgLabel = new Label();
-        msgLabel.setTextFill(Color.RED);
-
+        
         // Aksi Tombol Login
         btnLogin.setOnAction(e -> {
             String id = txtStaffId.getText();
             String pass = txtPassword.getText();
             
-            // Logika sederhana untuk demo
+            // 1. Validasi Input Kosong
             if (id.isEmpty() || pass.isEmpty()) {
                 msgLabel.setText("Staff ID dan Password harus diisi!");
-            } else {
-                msgLabel.setText("Mencoba login sebagai: " + id);
+                msgLabel.setTextFill(Color.RED);
+                return; // Stop proses
+            } 
+            
+            // 2. Cek ke Database
+            msgLabel.setText("Memeriksa data..."); // Feedback visual
+            msgLabel.setTextFill(Color.BLUE);
+
+            // Menjalankan cek login
+            boolean isValid = DatabaseHelper.validateLogin(id, pass);
+
+            if (isValid) {
+                msgLabel.setText("Login Berhasil!");
                 msgLabel.setTextFill(Color.GREEN);
+                
+                // TODO: Pindah ke Scene Utama (Dashboard)
+                // Contoh logika pindah scene sederhana (jika diperlukan disini):
+                // Stage stage = (Stage) btnLogin.getScene().getWindow();
+                // stage.setScene(new Scene(new DashboardPanel().getView()));
+                
+            } else {
+                msgLabel.setText("ID atau Password salah!");
+                msgLabel.setTextFill(Color.RED);
             }
         });
 
         rightPane.getChildren().addAll(loginTitle, txtStaffId, txtPassword, btnLogin, msgLabel);
 
-
-        // --- 3. ROOT LAYOUT (Menggabungkan Kiri & Kanan) ---
+        // --- 3. ROOT LAYOUT ---
         HBox root = new HBox();
         root.getChildren().addAll(leftPane, rightPane);
 
-        // Mengatur agar panel kiri dan kanan membagi ruang 50:50 (atau sesuai preferensi)
         HBox.setHgrow(leftPane, Priority.ALWAYS);
         HBox.setHgrow(rightPane, Priority.ALWAYS);
         
-        // Opsional: Batasi lebar maksimum panel kiri agar tidak terlalu lebar di layar besar
         leftPane.setMaxWidth(400); 
         leftPane.setPrefWidth(300);
 
-
-        // --- 4. SETUP SCENE & STAGE ---
-        Scene scene = new Scene(root, 700, 450); // Ukuran Window Awal
-        primaryStage.setTitle("Aplikasi Staff Login");
-        primaryStage.setScene(scene);
-        primaryStage.show();
-    }
-
-    public static void main(String[] args) {
-        launch(args);
+        // KEMBALIKAN ROOT (HBox)
+        return root;
     }
 }
