@@ -11,21 +11,24 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.ComboBox; // Import ComboBox
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField; // Import TextField
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import model.CartItem;
-import model.CustomerModel; // Import CustomerModel
+import model.CustomerModel;
 import model.Menu;
 import util.DatabaseHelper;
 import util.UserSession;
@@ -36,8 +39,9 @@ public class DashboardPanel {
     private Label lblGrandTotal = new Label("Total: Rp 0");
     private TableView<CartItem> table; 
     
-    // Tambahan: ComboBox Pelanggan
+    // UI Components untuk Input Data Transaksi
     private ComboBox<CustomerModel> cmbCustomer;
+    private TextField txtMeja; // Input Nomor Meja
 
     public BorderPane getView() {
         BorderPane root = new BorderPane();
@@ -50,15 +54,15 @@ public class DashboardPanel {
         header.setStyle("-fx-background-color: #2D3447; -fx-background-radius: 5;");
         
         Label title = new Label("AOL Kitchen POS System");
-        title.setTextFill(javafx.scene.paint.Color.WHITE);
+        title.setTextFill(Color.WHITE);
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
         
-        // Menampilkan nama staff yang sedang login
-        Label staffLabel = new Label("Staff: " + (UserSession.getStaffId() != null ? UserSession.getStaffId() : "Guest"));
-        staffLabel.setTextFill(javafx.scene.paint.Color.LIGHTGRAY);
+        // Menampilkan nama staff
+        String staffName = (UserSession.getStaffId() != null) ? UserSession.getStaffId() : "Guest";
+        Label staffLabel = new Label("Staff: " + staffName);
+        staffLabel.setTextFill(Color.LIGHTGRAY);
         
-        // Spacer agar judul di kiri, nama staff di kanan
-        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         header.getChildren().addAll(title, spacer, staffLabel);
@@ -80,7 +84,7 @@ public class DashboardPanel {
         List<Menu> dbMenus = DatabaseHelper.getAllMenu();
         
         if (dbMenus.isEmpty()) {
-            Label emptyLabel = new Label("Menu kosong.");
+            Label emptyLabel = new Label("Menu kosong/Database belum terisi.");
             menuContainer.getChildren().add(emptyLabel);
         } else {
             for (Menu m : dbMenus) {
@@ -91,27 +95,22 @@ public class DashboardPanel {
         scrollPane.setContent(menuContainer);
         root.setCenter(scrollPane);
 
-        // --- 3. KERANJANG (KANAN) ---
+        // --- 3. KERANJANG & INPUT (KANAN) ---
         VBox rightPane = new VBox(10);
         rightPane.setPadding(new Insets(15));
         rightPane.setPrefWidth(350);
         rightPane.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #dee2e6; -fx-border-width: 1;");
 
-        Label cartTitle = new Label("Daftar Pesanan");
+        Label cartTitle = new Label("Detail Pesanan");
         cartTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
         
-        // --- PILIH PELANGGAN (BARU) ---
+        // A. Input Pelanggan
         VBox customerBox = new VBox(5);
         Label lblCust = new Label("Pelanggan:");
-        
         cmbCustomer = new ComboBox<>();
         cmbCustomer.setPromptText("Pilih Pelanggan (Opsional)");
         cmbCustomer.setMaxWidth(Double.MAX_VALUE);
         
-        // Load data pelanggan ke ComboBox
-        refreshCustomerList();
-        
-        // Tombol Reset Pelanggan (Jadi Guest/Tamu)
         Button btnResetCust = new Button("Reset (Tamu)");
         btnResetCust.setStyle("-fx-font-size: 10px;");
         btnResetCust.setOnAction(e -> cmbCustomer.getSelectionModel().clearSelection());
@@ -120,8 +119,16 @@ public class DashboardPanel {
         custHeader.setAlignment(Pos.CENTER_LEFT);
         
         customerBox.getChildren().addAll(custHeader, cmbCustomer);
-        // ------------------------------
+        refreshCustomerList(); // Load data pelanggan
 
+        // B. Input Nomor Meja (BARU)
+        VBox mejaBox = new VBox(5);
+        Label lblMeja = new Label("No. Meja:");
+        txtMeja = new TextField();
+        txtMeja.setPromptText("Contoh: 12 (Kosong = Take Away)");
+        mejaBox.getChildren().addAll(lblMeja, txtMeja);
+
+        // C. Tabel Keranjang
         table = new TableView<>();
         table.setItems(cartData);
         table.setPlaceholder(new Label("Keranjang kosong"));
@@ -133,7 +140,7 @@ public class DashboardPanel {
 
         TableColumn<CartItem, Integer> colQty = new TableColumn<>("Qty");
         colQty.setCellValueFactory(new PropertyValueFactory<>("qty"));
-        colQty.setPrefWidth(60);
+        colQty.setPrefWidth(50);
         
         TableColumn<CartItem, Integer> colTotal = new TableColumn<>("Subtotal");
         colTotal.setCellValueFactory(new PropertyValueFactory<>("total"));
@@ -141,6 +148,7 @@ public class DashboardPanel {
 
         table.getColumns().addAll(colName, colQty, colTotal);
 
+        // D. Tombol Aksi
         Button btnCheckout = new Button("PROSES PEMBAYARAN");
         btnCheckout.setMaxWidth(Double.MAX_VALUE);
         btnCheckout.setPrefHeight(40);
@@ -159,17 +167,24 @@ public class DashboardPanel {
         lblGrandTotal.setAlignment(Pos.CENTER_RIGHT);
         lblGrandTotal.setMaxWidth(Double.MAX_VALUE);
 
-        // Tambahkan customerBox ke layout
-        rightPane.getChildren().addAll(cartTitle, customerBox, table, lblGrandTotal, btnClear, btnCheckout);
+        // Masukkan semua elemen ke panel kanan
+        rightPane.getChildren().addAll(
+            cartTitle, 
+            customerBox, 
+            mejaBox, // Tambahan Meja
+            table, 
+            lblGrandTotal, 
+            btnClear, 
+            btnCheckout
+        );
         
         root.setRight(rightPane);
 
         return root;
     }
 
-    // --- HELPER METHODS ---
+    // --- LOGIC METHODS ---
     
-    // Method untuk load ulang list pelanggan (bisa dipanggil dari luar jika ada fitur tambah pelanggan)
     public void refreshCustomerList() {
         List<CustomerModel> customers = DatabaseHelper.getAllCustomers();
         cmbCustomer.setItems(FXCollections.observableArrayList(customers));
@@ -215,15 +230,25 @@ public class DashboardPanel {
             return;
         }
 
-        // Ambil Pelanggan yang dipilih
+        // 1. Ambil Data Pelanggan
         CustomerModel selectedCust = cmbCustomer.getValue();
         String custName = (selectedCust != null) ? selectedCust.getNamaPelanggan() : "Tamu (Guest)";
         String custId = (selectedCust != null) ? selectedCust.getIdPelanggan() : null;
+        
+        // 2. Ambil Data Meja
+        String noMeja = txtMeja.getText();
+        String displayMeja = (noMeja == null || noMeja.isEmpty()) ? "Take Away / 00" : noMeja;
 
+        // 3. Konfirmasi
         Alert confirm = new Alert(AlertType.CONFIRMATION);
         confirm.setTitle("Konfirmasi Pembayaran");
-        confirm.setHeaderText("Pelanggan: " + custName + "\nTotal: " + lblGrandTotal.getText());
-        confirm.setContentText("Lanjutkan proses transaksi?");
+        confirm.setHeaderText("Konfirmasi Transaksi");
+        confirm.setContentText(
+            "Pelanggan: " + custName + "\n" +
+            "Meja: " + displayMeja + "\n" +
+            "Total: " + lblGrandTotal.getText() + "\n\n" +
+            "Lanjutkan proses pembayaran?"
+        );
         
         confirm.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
@@ -231,14 +256,22 @@ public class DashboardPanel {
                 String currentStaff = UserSession.getStaffId();
                 if (currentStaff == null) currentStaff = "KS001"; 
 
-                // Panggil saveTransaction dengan parameter custId
-                boolean success = DatabaseHelper.saveTransaction(currentStaff, custId, new ArrayList<>(cartData));
+                // 4. Panggil DatabaseHelper (Dengan parameter No Meja)
+                boolean success = DatabaseHelper.saveTransaction(
+                    currentStaff, 
+                    custId, 
+                    noMeja, // Kirim input meja
+                    new ArrayList<>(cartData)
+                );
 
                 if (success) {
                     showAlert(AlertType.INFORMATION, "Sukses", "Transaksi berhasil disimpan!");
+                    
+                    // Reset Form
                     cartData.clear();
                     updateGrandTotal();
-                    cmbCustomer.getSelectionModel().clearSelection(); // Reset pilihan pelanggan
+                    cmbCustomer.getSelectionModel().clearSelection();
+                    txtMeja.clear(); 
                 } else {
                     showAlert(AlertType.ERROR, "Gagal", "Terjadi kesalahan saat menyimpan ke database.");
                 }

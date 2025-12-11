@@ -13,4 +13,5 @@ public class Kasir {
 
     public String getIdKasir() { return idKasir; }
     public String getNamaKasir() { return namaKasir; }
+    public String getPassword() { return password; }
 }
