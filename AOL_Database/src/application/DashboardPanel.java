@@ -11,6 +11,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox; // Import ComboBox
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableColumn;
@@ -24,16 +25,19 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import model.CartItem;
+import model.CustomerModel; // Import CustomerModel
 import model.Menu;
 import util.DatabaseHelper;
 import util.UserSession;
 
 public class DashboardPanel {
 
-    // Data Keranjang Belanja
     private ObservableList<CartItem> cartData = FXCollections.observableArrayList();
     private Label lblGrandTotal = new Label("Total: Rp 0");
     private TableView<CartItem> table; 
+    
+    // Tambahan: ComboBox Pelanggan
+    private ComboBox<CustomerModel> cmbCustomer;
 
     public BorderPane getView() {
         BorderPane root = new BorderPane();
@@ -49,8 +53,15 @@ public class DashboardPanel {
         title.setTextFill(javafx.scene.paint.Color.WHITE);
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
         
-        header.getChildren().add(title);
-        // Tombol History DIHAPUS karena sudah pakai TabPane
+        // Menampilkan nama staff yang sedang login
+        Label staffLabel = new Label("Staff: " + (UserSession.getStaffId() != null ? UserSession.getStaffId() : "Guest"));
+        staffLabel.setTextFill(javafx.scene.paint.Color.LIGHTGRAY);
+        
+        // Spacer agar judul di kiri, nama staff di kanan
+        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        header.getChildren().addAll(title, spacer, staffLabel);
         
         root.setTop(header);
         BorderPane.setMargin(header, new Insets(0, 0, 10, 0));
@@ -69,14 +80,11 @@ public class DashboardPanel {
         List<Menu> dbMenus = DatabaseHelper.getAllMenu();
         
         if (dbMenus.isEmpty()) {
-            Label emptyLabel = new Label("Tidak ada menu tersedia.\nSilakan cek database.");
-            emptyLabel.setFont(Font.font("Arial", 16));
-            emptyLabel.setTextFill(javafx.scene.paint.Color.GREY);
+            Label emptyLabel = new Label("Menu kosong.");
             menuContainer.getChildren().add(emptyLabel);
         } else {
             for (Menu m : dbMenus) {
-                Button btnMenu = createMenuButton(m);
-                menuContainer.getChildren().add(btnMenu);
+                menuContainer.getChildren().add(createMenuButton(m));
             }
         }
         
@@ -91,6 +99,28 @@ public class DashboardPanel {
 
         Label cartTitle = new Label("Daftar Pesanan");
         cartTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
+        
+        // --- PILIH PELANGGAN (BARU) ---
+        VBox customerBox = new VBox(5);
+        Label lblCust = new Label("Pelanggan:");
+        
+        cmbCustomer = new ComboBox<>();
+        cmbCustomer.setPromptText("Pilih Pelanggan (Opsional)");
+        cmbCustomer.setMaxWidth(Double.MAX_VALUE);
+        
+        // Load data pelanggan ke ComboBox
+        refreshCustomerList();
+        
+        // Tombol Reset Pelanggan (Jadi Guest/Tamu)
+        Button btnResetCust = new Button("Reset (Tamu)");
+        btnResetCust.setStyle("-fx-font-size: 10px;");
+        btnResetCust.setOnAction(e -> cmbCustomer.getSelectionModel().clearSelection());
+        
+        HBox custHeader = new HBox(10, lblCust, btnResetCust);
+        custHeader.setAlignment(Pos.CENTER_LEFT);
+        
+        customerBox.getChildren().addAll(custHeader, cmbCustomer);
+        // ------------------------------
 
         table = new TableView<>();
         table.setItems(cartData);
@@ -129,7 +159,8 @@ public class DashboardPanel {
         lblGrandTotal.setAlignment(Pos.CENTER_RIGHT);
         lblGrandTotal.setMaxWidth(Double.MAX_VALUE);
 
-        rightPane.getChildren().addAll(cartTitle, table, lblGrandTotal, btnClear, btnCheckout);
+        // Tambahkan customerBox ke layout
+        rightPane.getChildren().addAll(cartTitle, customerBox, table, lblGrandTotal, btnClear, btnCheckout);
         
         root.setRight(rightPane);
 
@@ -137,22 +168,21 @@ public class DashboardPanel {
     }
 
     // --- HELPER METHODS ---
+    
+    // Method untuk load ulang list pelanggan (bisa dipanggil dari luar jika ada fitur tambah pelanggan)
+    public void refreshCustomerList() {
+        List<CustomerModel> customers = DatabaseHelper.getAllCustomers();
+        cmbCustomer.setItems(FXCollections.observableArrayList(customers));
+    }
 
     private Button createMenuButton(Menu m) {
         Button btn = new Button(m.getNamaMenu() + "\nRp " + m.getHarga());
         btn.setPrefSize(140, 90);
         btn.setWrapText(true);
-        btn.setStyle(
-            "-fx-background-color: white; " +
-            "-fx-border-color: #bdc3c7; " +
-            "-fx-border-radius: 5; " +
-            "-fx-background-radius: 5; " +
-            "-fx-font-size: 13px; " +
-            "-fx-cursor: hand;"
-        );
+        btn.setStyle("-fx-background-color: white; -fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-cursor: hand;");
         
-        btn.setOnMouseEntered(e -> btn.setStyle("-fx-background-color: #e9ecef; -fx-border-color: #adb5bd; -fx-border-radius: 5; -fx-background-radius: 5; -fx-font-size: 13px; -fx-cursor: hand;"));
-        btn.setOnMouseExited(e -> btn.setStyle("-fx-background-color: white; -fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-background-radius: 5; -fx-font-size: 13px; -fx-cursor: hand;"));
+        btn.setOnMouseEntered(e -> btn.setStyle("-fx-background-color: #e9ecef; -fx-border-color: #adb5bd; -fx-border-radius: 5;"));
+        btn.setOnMouseExited(e -> btn.setStyle("-fx-background-color: white; -fx-border-color: #bdc3c7; -fx-border-radius: 5;"));
 
         btn.setOnAction(e -> addToCart(m));
         return btn;
@@ -185,25 +215,30 @@ public class DashboardPanel {
             return;
         }
 
+        // Ambil Pelanggan yang dipilih
+        CustomerModel selectedCust = cmbCustomer.getValue();
+        String custName = (selectedCust != null) ? selectedCust.getNamaPelanggan() : "Tamu (Guest)";
+        String custId = (selectedCust != null) ? selectedCust.getIdPelanggan() : null;
+
         Alert confirm = new Alert(AlertType.CONFIRMATION);
         confirm.setTitle("Konfirmasi Pembayaran");
-        confirm.setHeaderText("Total Transaksi: " + lblGrandTotal.getText());
-        confirm.setContentText("Lanjutkan proses pembayaran?");
+        confirm.setHeaderText("Pelanggan: " + custName + "\nTotal: " + lblGrandTotal.getText());
+        confirm.setContentText("Lanjutkan proses transaksi?");
         
         confirm.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
                 
                 String currentStaff = UserSession.getStaffId();
-                if (currentStaff == null) {
-                    currentStaff = "KS001"; 
-                }
+                if (currentStaff == null) currentStaff = "KS001"; 
 
-                boolean success = DatabaseHelper.saveTransaction(currentStaff, new ArrayList<>(cartData));
+                // Panggil saveTransaction dengan parameter custId
+                boolean success = DatabaseHelper.saveTransaction(currentStaff, custId, new ArrayList<>(cartData));
 
                 if (success) {
                     showAlert(AlertType.INFORMATION, "Sukses", "Transaksi berhasil disimpan!");
                     cartData.clear();
                     updateGrandTotal();
+                    cmbCustomer.getSelectionModel().clearSelection(); // Reset pilihan pelanggan
                 } else {
                     showAlert(AlertType.ERROR, "Gagal", "Terjadi kesalahan saat menyimpan ke database.");
                 }

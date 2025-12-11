@@ -4,62 +4,57 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TabPane.TabClosingPolicy;
 import javafx.scene.layout.BorderPane;
-import util.UserSession; 
 
 public class MainLayout {
 
     public BorderPane getView() {
         BorderPane root = new BorderPane();
 
-        // 1. Inisialisasi Panel Halaman
+        // 1. Inisialisasi Panel
         DashboardPanel dashboard = new DashboardPanel();
         HistoryPanel history = new HistoryPanel();
-        ManageMenuPanel manageMenu = new ManageMenuPanel(); // Panel Baru
+        ManageMenuPanel manageMenu = new ManageMenuPanel();
+        ManageCategoryPanel manageCategory = new ManageCategoryPanel();
+        ManageCustomerPanel manageCustomer = new ManageCustomerPanel(); // BARU
 
-        // 2. Buat TabPane
+        // 2. Setup TabPane
         TabPane tabPane = new TabPane();
         tabPane.setTabClosingPolicy(TabClosingPolicy.UNAVAILABLE);
         tabPane.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
 
-        // --- TAB 1: KASIR ---
+        // --- DEFINE TABS ---
+        
+        // Tab 1: Kasir
         Tab tabKasir = new Tab("Kasir / POS");
         tabKasir.setContent(dashboard.getView());
-        tabKasir.setClosable(false);
+        // Saat kembali ke kasir, refresh dropdown pelanggan agar data baru muncul
+        tabKasir.setOnSelectionChanged(e -> {
+            if(tabKasir.isSelected()) dashboard.refreshCustomerList();
+        });
 
-        // --- TAB 2: RIWAYAT ---
-        Tab tabHistory = new Tab("Riwayat Transaksi");
+        // Tab 2: Riwayat
+        Tab tabHistory = new Tab("Riwayat");
         tabHistory.setContent(history.getView());
-        tabHistory.setClosable(false);
-        
-        //-- TAB 3: category
-        ManageCategoryPanel manageCategory = new ManageCategoryPanel();
-        Tab tabCategory = new Tab("Kategori");
-        tabCategory.setContent(manageCategory.getView());
-        
         tabHistory.setOnSelectionChanged(e -> {
             if (tabHistory.isSelected()) history.refreshData();
         });
 
-        // --- TAB 3: KELOLA MENU (BARU) ---
-        Tab tabMenu = new Tab("Kelola Menu");
+        // Tab 3: Menu
+        Tab tabMenu = new Tab("Menu");
         tabMenu.setContent(manageMenu.getView());
-        tabMenu.setClosable(false);
+
+        // Tab 4: Kategori
+        Tab tabCategory = new Tab("Kategori");
+        tabCategory.setContent(manageCategory.getView());
         
-        // Logika: Saat tab menu dipilih, refresh Dashboard (siapa tahu harga berubah)
-        tabKasir.setOnSelectionChanged(e -> {
-             // Opsional: jika ingin dashboard auto-refresh saat balik dari tab menu
-             // Anda perlu menambahkan method refreshMenu() di DashboardPanel nanti.
-        });
+        // Tab 5: Pelanggan (BARU)
+        Tab tabCustomer = new Tab("Pelanggan");
+        tabCustomer.setContent(manageCustomer.getView());
 
-        // Masukkan Tab
-        tabPane.getTabs().addAll(tabKasir, tabHistory, tabMenu, tabCategory);
-
-        // --- LOGOUT BUTTON (BONUS) ---
-        // Biasanya TabPane memenuhi layar, tapi kita bisa menambahkan tombol logout di header root jika mau.
-        // Untuk sekarang, kita full screen TabPane saja.
-
+        // Add All Tabs
+        tabPane.getTabs().addAll(tabKasir, tabHistory, tabMenu, tabCategory, tabCustomer);
+        
         root.setCenter(tabPane);
-
         return root;
     }
 }

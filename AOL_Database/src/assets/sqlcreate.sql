@@ -51,7 +51,7 @@ CREATE TABLE Transaksi (
 
 -- F. Tabel Detail Pesanan
 CREATE TABLE Detail_Pesanan (
-    no_nota VARCHAR(15),
+    no_nota VARCHAR(20),
     kode_menu CHAR(5),
     jumlah INT NOT NULL,
     subtotal INT NOT NULL,

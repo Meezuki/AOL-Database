@@ -10,6 +10,7 @@ import java.util.List;
 
 import model.CartItem;
 import model.CategoryModel;
+import model.CustomerModel;
 import model.Menu;
 import model.TransactionModel; 
 
@@ -81,11 +82,8 @@ public class DatabaseHelper {
     
     
     // --- 3. SIMPAN TRANSAKSI (Tabel: Transaksi & Detail_Pesanan) ---
-    public static boolean saveTransaction(String staffId, List<CartItem> items) {
-        // Sesuai ERD: no_nota, id_kasir, tanggal_transaksi, id_pelanggan, no_meja
+    public static boolean saveTransaction(String staffId, String customerId, List<CartItem> items) {
         String insertHeader = "INSERT INTO Transaksi (no_nota, id_kasir, tanggal_transaksi, id_pelanggan, no_meja) VALUES (?, ?, ?, ?, ?)";
-        
-        // Sesuai ERD: no_nota, kode_menu, jumlah, subtotal, harga_satuan_saat_itu
         String insertDetail = "INSERT INTO Detail_Pesanan (no_nota, kode_menu, jumlah, subtotal, harga_satuan_saat_itu) VALUES (?, ?, ?, ?, ?)";
 
         Connection conn = null;
@@ -96,37 +94,37 @@ public class DatabaseHelper {
             conn = DatabaseConnection.connect();
             if (conn == null) return false;
 
-            conn.setAutoCommit(false); // Mulai Transaksi Database
+            conn.setAutoCommit(false); 
 
-            // A. Generate No Nota (Contoh: TRX-Waktu)
-            String noNota = "TRX-" + System.currentTimeMillis();
+            // Generate No Nota (Aman < 20 karakter)
+            String noNota = "TRX-" + (System.currentTimeMillis() % 1000000000);
             
-            // B. Insert Header
+            // Simpan Header
             psHeader = conn.prepareStatement(insertHeader);
             psHeader.setString(1, noNota);
             psHeader.setString(2, staffId);
             psHeader.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-            psHeader.setString(4, null); // id_pelanggan (Dibuat NULL/Guest sesuai ERD relasi 0..*)
-            psHeader.setString(5, "00"); // no_meja (Default)
             
+            // --- PERUBAHAN DI SINI ---
+            // Jika customerId null, database akan menyimpannya sebagai NULL (Guest)
+            psHeader.setString(4, customerId); 
+            
+            psHeader.setString(5, "00"); 
             psHeader.executeUpdate();
 
-            // C. Insert Detail
+            // Simpan Detail (Sama seperti sebelumnya)
             psDetail = conn.prepareStatement(insertDetail);
-            
             for (CartItem item : items) {
                 psDetail.setString(1, noNota);
-                psDetail.setString(2, item.getKodeMenu()); // Pastikan CartItem return kode_menu
+                psDetail.setString(2, item.getKodeMenu());
                 psDetail.setInt(3, item.getQty());
-                psDetail.setInt(4, item.getTotal()); // subtotal
-                psDetail.setInt(5, item.getPrice()); // harga_satuan_saat_itu
-                
+                psDetail.setInt(4, item.getTotal());
+                psDetail.setInt(5, item.getPrice());
                 psDetail.addBatch();
             }
-            
             psDetail.executeBatch(); 
 
-            conn.commit(); // Simpan Permanen
+            conn.commit(); 
             return true;
 
         } catch (Exception e) {
@@ -280,5 +278,76 @@ public class DatabaseHelper {
         } catch (Exception e) { e.printStackTrace(); }
         return list;
     }
+    
+    
+ // --- UPDATE: AMBIL SEMUA PELANGGAN (LENGKAP) ---
+    public static List<CustomerModel> getAllCustomers() {
+        List<CustomerModel> list = new ArrayList<>();
+        String query = "SELECT * FROM Pelanggan"; 
+        
+        try (Connection conn = DatabaseConnection.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                list.add(new CustomerModel(
+                    rs.getString("id_pelanggan"), 
+                    rs.getString("nama_pelanggan"),
+                    rs.getString("tipe_membership"),
+                    rs.getString("no_telp_pelanggan")
+                ));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // --- BARU: INSERT PELANGGAN ---
+    public static boolean insertCustomer(String id, String nama, String tipe, String telp) {
+        String query = "INSERT INTO Pelanggan (id_pelanggan, nama_pelanggan, tipe_membership, no_telp_pelanggan) VALUES (?, ?, ?, ?)";
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, id);
+            ps.setString(2, nama);
+            ps.setString(3, tipe);
+            ps.setString(4, telp); // Boleh kosong jika user tidak input
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // --- BARU: UPDATE PELANGGAN ---
+    public static boolean updateCustomer(String id, String nama, String tipe, String telp) {
+        String query = "UPDATE Pelanggan SET nama_pelanggan=?, tipe_membership=?, no_telp_pelanggan=? WHERE id_pelanggan=?";
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, nama);
+            ps.setString(2, tipe);
+            ps.setString(3, telp);
+            ps.setString(4, id);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // --- BARU: DELETE PELANGGAN ---
+    public static boolean deleteCustomer(String id) {
+        String query = "DELETE FROM Pelanggan WHERE id_pelanggan=?";
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, id);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            return false; // Gagal jika pelanggan sudah pernah transaksi (Foreign Key restrict)
+        }
+    }
+    
+    
+    
 }
 
