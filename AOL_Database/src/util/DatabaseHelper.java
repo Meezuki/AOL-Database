@@ -321,4 +321,87 @@ public class DatabaseHelper {
         } catch (Exception e) { e.printStackTrace(); }
         return history;
     }
+    
+    
+    
+ // ==========================================
+    // 5. REPORTING / LAPORAN
+    // ==========================================
+
+    // A. Laporan Meja Terlaris
+    public static List<model.ReportModel> getHotTables() {
+        List<model.ReportModel> list = new ArrayList<>();
+        String query = "SELECT no_meja, COUNT(no_nota) as total FROM Transaksi GROUP BY no_meja ORDER BY total DESC";
+        try (Connection conn = DatabaseConnection.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+            while (rs.next()) {
+                // Handle meja kosong (Take Away)
+                String meja = rs.getString("no_meja");
+                if (meja == null || meja.equals("00")) meja = "Take Away";
+                
+                list.add(new model.ReportModel(meja, rs.getInt("total")));
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return list;
+    }
+
+    // B. Laporan Kategori Terlaris (Berdasarkan Omzet)
+    public static List<model.ReportModel> getBestCategory() {
+        List<model.ReportModel> list = new ArrayList<>();
+        String query = 
+            "SELECT k.nama_kategori, SUM(d.subtotal) as omzet " +
+            "FROM Detail_Pesanan d " +
+            "JOIN Menu m ON d.kode_menu = m.kode_menu " +
+            "JOIN Kategori k ON m.id_kategori = k.id_kategori " +
+            "GROUP BY k.nama_kategori ORDER BY omzet DESC";
+        try (Connection conn = DatabaseConnection.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+            while (rs.next()) {
+                list.add(new model.ReportModel(rs.getString("nama_kategori"), rs.getInt("omzet")));
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return list;
+    }
+
+    // C. Laporan Menu Terlaris (Top 5 Qty)
+    public static List<model.ReportModel> getTopMenu() {
+        List<model.ReportModel> list = new ArrayList<>();
+        String query = 
+            "SELECT m.nama_menu, SUM(d.jumlah) as porsi " +
+            "FROM Detail_Pesanan d " +
+            "JOIN Menu m ON d.kode_menu = m.kode_menu " +
+            "GROUP BY m.nama_menu ORDER BY porsi DESC LIMIT 5";
+        try (Connection conn = DatabaseConnection.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+            while (rs.next()) {
+                list.add(new model.ReportModel(rs.getString("nama_menu"), rs.getInt("porsi")));
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return list;
+    }
+
+    // D. Laporan Kinerja Staff
+    public static List<model.ReportModel> getTopStaff() {
+        List<model.ReportModel> list = new ArrayList<>();
+        String query = 
+            "SELECT k.nama_kasir, COUNT(t.no_nota) as transaksi " +
+            "FROM Transaksi t JOIN Kasir k ON t.id_kasir = k.id_kasir " +
+            "GROUP BY k.nama_kasir ORDER BY transaksi DESC";
+        try (Connection conn = DatabaseConnection.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+            while (rs.next()) {
+                list.add(new model.ReportModel(rs.getString("nama_kasir"), rs.getInt("transaksi")));
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return list;
+    }
+    
+    
+    
+    
+    
 }

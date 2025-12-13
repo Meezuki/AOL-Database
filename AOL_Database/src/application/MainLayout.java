@@ -16,6 +16,11 @@ public class MainLayout {
         ManageMenuPanel manageMenu = new ManageMenuPanel();
         ManageCategoryPanel manageCategory = new ManageCategoryPanel();
         ManageCustomerPanel manageCustomer = new ManageCustomerPanel(); // BARU
+        
+        
+        ReportPanel reportPanel = new ReportPanel();
+        
+        
 
         // 2. Setup TabPane
         TabPane tabPane = new TabPane();
@@ -47,12 +52,17 @@ public class MainLayout {
         Tab tabCategory = new Tab("Kategori");
         tabCategory.setContent(manageCategory.getView());
         
-        // Tab 5: Pelanggan (BARU)
+        // Tab 5: Pelanggan 
         Tab tabCustomer = new Tab("Pelanggan");
         tabCustomer.setContent(manageCustomer.getView());
 
+        // Tab 6: Laporan
+        Tab tabLaporan = new Tab("Laporan");
+        tabLaporan.setContent(reportPanel.getView());
+        
+        
         // Add All Tabs
-        tabPane.getTabs().addAll(tabKasir, tabHistory, tabMenu, tabCategory, tabCustomer);
+        tabPane.getTabs().addAll(tabKasir, tabHistory, tabMenu, tabCategory, tabCustomer, tabLaporan);
         
         root.setCenter(tabPane);
         return root;
